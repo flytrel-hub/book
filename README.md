@@ -123,7 +123,7 @@ const service2 = new BookService(new RedisBookRepository());
 
 **Bad:** Класс с 20+ методами — клиент зависит от того, что не использует
 ```javascript
-// Клиенту нужен только поиск, а он依赖 от:
+// Клиенту нужен только поиск, а он от:
 // saveToFile, loadFromFile, saveToLocalStorage,
 // exportToCSV, exportToHTML, sendNotification...
 ```
