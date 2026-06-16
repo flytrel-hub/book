@@ -1,5 +1,3 @@
-const BookService = require('./src/bookService');
-
 const service = new BookService();
 
 const bookInput = document.getElementById('bookInput');

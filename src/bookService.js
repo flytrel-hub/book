@@ -16,4 +16,4 @@ class BookService {
     }
 }
 
-module.exports = BookService;
+if (typeof module !== 'undefined') module.exports = BookService;
