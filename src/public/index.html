@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Library</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 20px; color: #333; }
+        .input-group { display: flex; gap: 8px; margin-bottom: 20px; }
+        .input-group input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .input-group button { padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .input-group button:hover { background: #45a049; }
+        ul { list-style: none; }
+        li { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        li span { flex: 1; }
+        li button { padding: 4px 8px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        li button:hover { background: #d32f2f; }
+        .empty { text-align: center; color: #999; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Book Library</h1>
+        <div class="input-group">
+            <input type="text" id="titleInput" placeholder="Название книги">
+            <input type="number" id="authorIdInput" placeholder="Author ID" value="1" style="width:80px">
+            <input type="number" id="categoryIdInput" placeholder="Category ID" value="1" style="width:80px">
+            <button id="addBtn">Добавить</button>
+        </div>
+        <ul id="bookList"></ul>
+    </div>
+    <script>
+        const API = '/api';
+
+        async function loadBooks() {
+            const res = await fetch(`${API}/books`);
+            const books = await res.json();
+            const list = document.getElementById('bookList');
+            if (books.length === 0) {
+                list.innerHTML = '<li class="empty">Нет книг</li>';
+                return;
+            }
+            list.innerHTML = books.map(b => `
+                <li>
+                    <span>${b.title} (ID: ${b.id})</span>
+                    <button onclick="deleteBook(${b.id})">Удалить</button>
+                </li>
+            `).join('');
+        }
+
+        async function addBook() {
+            const title = document.getElementById('titleInput').value.trim();
+            const authorId = parseInt(document.getElementById('authorIdInput').value);
+            const categoryId = parseInt(document.getElementById('categoryIdInput').value);
+            if (!title) return;
+            await fetch(`${API}/books`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, authorId, categoryId })
+            });
+            document.getElementById('titleInput').value = '';
+            loadBooks();
+        }
+
+        async function deleteBook(id) {
+            await fetch(`${API}/books/${id}`, { method: 'DELETE' });
+            loadBooks();
+        }
+
+        document.getElementById('addBtn').onclick = addBook;
+        document.getElementById('titleInput').onkeypress = (e) => { if (e.key === 'Enter') addBook(); };
+        loadBooks();
+    </script>
+</body>
+</html>

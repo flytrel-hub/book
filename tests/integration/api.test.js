@@ -113,10 +113,10 @@ describe('Integration — Categories API', () => {
 
 describe('Integration — Root endpoint', () => {
 
-    test('GET / возвращает информацию об API', async () => {
+    test('GET / возвращает HTML-страницу', async () => {
         const res = await request(app).get('/');
         expect(res.status).toBe(200);
-        expect(res.body.message).toBe('Book Library API');
-        expect(res.body.docs).toBe('/api-docs');
+        expect(res.headers['content-type']).toContain('text/html');
+        expect(res.text).toContain('Book Library');
     });
 });
