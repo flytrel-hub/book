@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swagger');
 const { init: initDB } = require('./data/db');
@@ -23,11 +24,10 @@ app.use('/api/books', booksRouter);
 app.use('/api/authors', authorsRouter);
 app.use('/api/categories', categoriesRouter);
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (req, res) => {
-    res.json({
-        message: 'Book Library API',
-        docs: '/api-docs'
-    });
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 if (require.main === module) {
