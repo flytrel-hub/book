@@ -1,8 +1,6 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
-
-RUN npm install -g concurrently
 
 COPY services/authors/package*.json ./services/authors/
 COPY services/categories/package*.json ./services/categories/
@@ -15,6 +13,17 @@ RUN cd services/books && npm install --omit=dev
 COPY services/ ./services/
 COPY public/ ./public/
 
-EXPOSE 3001 3002 3003
+FROM nginx:alpine
 
-CMD ["concurrently", "node services/authors/index.js", "node services/categories/index.js", "node services/books/index.js"]
+RUN apk add --no-cache nodejs
+
+WORKDIR /app
+
+COPY --from=builder /app /app
+COPY gateway/nginx-railway.conf /etc/nginx/nginx.conf.template
+COPY gateway/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+EXPOSE 80
+
+CMD ["/app/start.sh"]
