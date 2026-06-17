@@ -1,0 +1,9 @@
+{
+  "name": "categories-service",
+  "version": "1.0.0",
+  "scripts": { "start": "node index.js" },
+  "dependencies": {
+    "express": "^4.22.2",
+    "pg": "^8.13.0"
+  }
+}

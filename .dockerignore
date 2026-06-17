@@ -1,10 +1,6 @@
 node_modules
 npm-debug.log
-coverage
-cypress
-tests
 .git
 .gitignore
+docs/
 README.md
-TESTING.md
-*.test.js

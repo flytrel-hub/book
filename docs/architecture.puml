@@ -2,55 +2,43 @@
 
 !theme plain
 
-title Архитектура микросервисов — Онлайн-магазин
+title Book Library — Microservices Architecture
 
-package "Клиент" {
-    [Web-клиент] as Web
-    [Mobile-клиент] as Mobile
+package "Client" {
+    [Web Browser] as Web
 }
 
-package "API Gateway" {
-    [Nginx / Kong] as Gateway
+package "API Gateway (Nginx :80)" {
+    [Nginx] as Gateway
 }
 
-package "Микросервисы" {
-    [Users Service\nNode.js + PostgreSQL] as Users
-    [Products Service\nPython + MongoDB] as Products
-    [Orders Service\nGo + PostgreSQL] as Orders
-    [Payments Service\nJava + PostgreSQL] as Payments
-    [Notifications Service\nNode.js + Redis] as Notifications
+package "Microservices" {
+    [Authors Service\nNode.js :3001] as AuthorsSvc
+    [Categories Service\nNode.js :3002] as CategoriesSvc
+    [Books Service\nNode.js :3003] as BooksSvc
 }
 
-package "Сообщения" {
-    database "RabbitMQ" as MQ
+package "Databases (PostgreSQL)" {
+    database "authors-db" as PgAuthors
+    database "categories-db" as PgCategories
+    database "books-db" as PgBooks
 }
 
-package "Хранилища" {
-    database "PostgreSQL\n(Users)" as PgUsers
-    database "PostgreSQL\n(Orders)" as PgOrders
-    database "PostgreSQL\n(Payments)" as PgPayments
-    database "MongoDB\n(Products)" as Mongo
-    database "Redis\n(Cache)" as Redis
-}
+Web --> Gateway : HTTP
+Gateway --> AuthorsSvc : /api/authors
+Gateway --> CategoriesSvc : /api/categories
+Gateway --> BooksSvc : /api/books
 
-Web --> Gateway
-Mobile --> Gateway
+AuthorsSvc --> PgAuthors
+CategoriesSvc --> PgCategories
+BooksSvc --> PgBooks
 
-Gateway --> Users : REST
-Gateway --> Products : REST
-Gateway --> Orders : REST
-Gateway --> Payments : REST
-
-Users --> PgUsers
-Products --> Mongo
-Orders --> PgOrders
-Payments --> PgPayments
-Notifications --> Redis
-
-Orders --> MQ : "Заказ создан"
-MQ --> Payments : "Обработать платёж"
-MQ --> Notifications : "Отправить уведомление"
-Payments --> MQ : "Платёж обработан"
-MQ --> Orders : "Обновить статус"
+note right of Gateway
+  Nginx routes:
+  /api/authors → authors:3001
+  /api/categories → categories:3002
+  /api/books → books:3003
+  / → static HTML
+end note
 
 @enduml

@@ -1,31 +1,84 @@
 services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
+  authors:
+    build: ./services/authors
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/booklibrary
-      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:postgres@authors-db:5432/authors
     depends_on:
-      db:
+      authors-db:
         condition: service_healthy
     restart: unless-stopped
 
-  db:
+  categories:
+    build: ./services/categories
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@categories-db:5432/categories
+    depends_on:
+      categories-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  books:
+    build: ./services/books
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@books-db:5432/books
+    depends_on:
+      books-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  authors-db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=booklibrary
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      POSTGRES_DB: authors
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes: [authors-data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  categories-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: categories
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes: [categories-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  books-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: books
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes: [books-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./public:/usr/share/nginx/html:ro
+    depends_on:
+      - authors
+      - categories
+      - books
+    restart: unless-stopped
+
 volumes:
-  pgdata:
+  authors-data:
+  categories-data:
+  books-data:
