@@ -6,7 +6,7 @@
     "test": "jest",
     "test:unit": "jest tests/unit/",
     "test:integration": "jest tests/integration/",
-    "test:ui": "cypress run",
+    "test:ui": "node src/server.js & sleep 2 && cypress run; kill %1 2>/dev/null",
     "test:server": "jest tests/unit/ tests/integration/ --forceExit",
     "test:all": "jest --coverage",
     "coverage": "jest --coverage --coverageReporters=text-summary --coverageReporters=html"
