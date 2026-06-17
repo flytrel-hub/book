@@ -29,9 +29,11 @@ app.get('/', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
+    });
+}
 
 module.exports = app;
