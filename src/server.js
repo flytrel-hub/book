@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swagger');
+const { init: initDB } = require('./data/db');
 
 const booksRouter = require('./routes/books');
 const authorsRouter = require('./routes/authors');
@@ -29,9 +30,16 @@ app.get('/', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
-});
+if (require.main === module) {
+    initDB().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+            console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
+        });
+    }).catch(err => {
+        console.error('Failed to initialize database:', err);
+        process.exit(1);
+    });
+}
 
 module.exports = app;

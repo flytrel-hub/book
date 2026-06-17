@@ -1,13 +1,18 @@
-const store = require('./store');
+const { pool } = require('./db');
 
-function getAll() { return store.read().categories; }
-function getById(id) { return store.read().categories.find(c => c.id === id); }
-function create(category) {
-    const db = store.read();
-    const newCategory = { id: db.counters.categories++, ...category };
-    db.categories.push(newCategory);
-    store.write(db);
-    return newCategory;
+async function getAll() {
+    const { rows } = await pool.query('SELECT * FROM categories');
+    return rows;
+}
+
+async function getById(id) {
+    const { rows } = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
+    return rows[0] || null;
+}
+
+async function create(category) {
+    const { rows } = await pool.query('INSERT INTO categories (name) VALUES ($1) RETURNING *', [category.name]);
+    return rows[0];
 }
 
 module.exports = { getAll, getById, create };

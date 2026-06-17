@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+coverage
+cypress
+tests
+.git
+.gitignore
+README.md
+TESTING.md
+*.test.js
