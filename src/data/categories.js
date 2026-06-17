@@ -1,15 +1,12 @@
-let categories = [
-    { id: 1, name: "Programming" },
-    { id: 2, name: "Fiction" }
-];
+const store = require('./store');
 
-let nextId = 3;
-
-function getAll() { return categories; }
-function getById(id) { return categories.find(c => c.id === id); }
+function getAll() { return store.read().categories; }
+function getById(id) { return store.read().categories.find(c => c.id === id); }
 function create(category) {
-    const newCategory = { id: nextId++, ...category };
-    categories.push(newCategory);
+    const db = store.read();
+    const newCategory = { id: db.counters.categories++, ...category };
+    db.categories.push(newCategory);
+    store.write(db);
     return newCategory;
 }
 

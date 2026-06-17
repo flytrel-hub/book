@@ -1,16 +1,12 @@
-let authors = [
-    { id: 1, name: "Robert Martin" },
-    { id: 2, name: "Douglas Crockford" },
-    { id: 3, name: "George Orwell" }
-];
+const store = require('./store');
 
-let nextId = 4;
-
-function getAll() { return authors; }
-function getById(id) { return authors.find(a => a.id === id); }
+function getAll() { return store.read().authors; }
+function getById(id) { return store.read().authors.find(a => a.id === id); }
 function create(author) {
-    const newAuthor = { id: nextId++, ...author };
-    authors.push(newAuthor);
+    const db = store.read();
+    const newAuthor = { id: db.counters.authors++, ...author };
+    db.authors.push(newAuthor);
+    store.write(db);
     return newAuthor;
 }
 

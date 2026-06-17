@@ -1,28 +1,28 @@
-let books = [
-    { id: 1, title: "Clean Code", authorId: 1, categoryId: 1, year: 2008 },
-    { id: 2, title: "JavaScript: The Good Parts", authorId: 2, categoryId: 1, year: 2008 },
-    { id: 3, title: "1984", authorId: 3, categoryId: 2, year: 1949 }
-];
+const store = require('./store');
 
-let nextId = 4;
-
-function getAll() { return books; }
-function getById(id) { return books.find(b => b.id === id); }
+function getAll() { return store.read().books; }
+function getById(id) { return store.read().books.find(b => b.id === id); }
 function create(book) {
-    const newBook = { id: nextId++, ...book };
-    books.push(newBook);
+    const db = store.read();
+    const newBook = { id: db.counters.books++, ...book };
+    db.books.push(newBook);
+    store.write(db);
     return newBook;
 }
 function update(id, data) {
-    const index = books.findIndex(b => b.id === id);
+    const db = store.read();
+    const index = db.books.findIndex(b => b.id === id);
     if (index === -1) return null;
-    books[index] = { ...books[index], ...data };
-    return books[index];
+    db.books[index] = { ...db.books[index], ...data };
+    store.write(db);
+    return db.books[index];
 }
 function remove(id) {
-    const index = books.findIndex(b => b.id === id);
+    const db = store.read();
+    const index = db.books.findIndex(b => b.id === id);
     if (index === -1) return false;
-    books.splice(index, 1);
+    db.books.splice(index, 1);
+    store.write(db);
     return true;
 }
 
