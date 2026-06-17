@@ -1,186 +1,163 @@
-# Лабораторная работа №6: Применение принципов SOLID
+# Лабораторная работа №10: Проектирование микросервисной архитектуры
 
-## Структура проекта
+## Проект: Онлайн-магазин
+
+### 1. Микросервисы
+
+| Сервис | Ответственность | Язык | БД | Протокол |
+|--------|-----------------|------|----|----------|
+| **Users** | Регистрация, авторизация, профили | Node.js | PostgreSQL | REST |
+| **Products** | Каталог товаров, поиск, остатки | Python | MongoDB | REST |
+| **Orders** | Создание и управление заказами | Go | PostgreSQL | REST |
+| **Payments** | Обработка платежей, возвраты | Java | PostgreSQL | REST |
+| **Notifications** | Email, SMS, push-уведомления | Node.js | Redis | AMQP |
+
+### 2. Взаимодействие между сервисами
+
+#### Синхронное (REST)
 
 ```
-src/
-├── bad/
-│   └── BookManager.js          # "Плохой" код (1 класс = всё)
-├── solid/
-│   ├── Book.js                 # Модель данных
-│   ├── BookValidator.js        # Валидация
-│   ├── InMemoryBookRepository.js # Хранение
-│   ├── BookFormatter.js        # Экспорт (CSV/HTML/JSON)
-│   ├── BookStatistics.js       # Статистика
-│   ├── ConsoleNotifier.js      # Уведомления
-│   └── BookService.js          # Бизнес-логика
-tests/
-├── bad/
-│   └── BookManager.test.js     # 14 тестов
-└── solid/
-    └── BookService.test.js     # 16 тестов
+Клиент → Gateway → Users Service      (авторизация)
+Клиент → Gateway → Products Service   (каталог)
+Клиент → Gateway → Orders Service     (создание заказа)
 ```
 
----
+#### Асинхронное (RabbitMQ)
 
-## Сравнение: Bad vs SOLID
+```
+Orders Service → [О заказе] → RabbitMQ
+    ├── Payments Service   (обработать платёж)
+    └── Notifications Service (отправить уведомление)
 
-### SRP — Принцип единственной ответственности
-
-**Bad:** Один класс делает всё (161 строка, ~20 методов)
-```javascript
-class BookManager {
-    // Валидация
-    validateBook(book) { ... }
-    // Хранение
-    addBook(title, author, genre) { ... }
-    // Файловые операции
-    saveToFile() { ... }
-    loadFromFile() { ... }
-    // localStorage
-    saveToLocalStorage() { ... }
-    loadFromLocalStorage() { ... }
-    // Экспорт
-    exportToCSV() { ... }
-    exportToHTML() { ... }
-    exportToJSON() { ... }
-    // Уведомления
-    sendNotification(message) { ... }
-    // Статистика
-    getStatistics() { ... }
-}
+Payments Service → [О платеже] → RabbitMQ
+    └── Orders Service     (обновить статус)
 ```
 
-**SOLID:** Каждый класс — одна ответственность (7 файлов по 15–30 строк)
-```javascript
-// BookValidator.js — только валидация
-class BookValidator {
-    validate(book) { ... }
-}
+### 3. Диаграмма архитектуры
 
-// BookFormatter.js — только форматирование
-class BookFormatter {
-    toCSV(books) { ... }
-    toHTML(books) { ... }
-    toJSON(books) { ... }
-}
+Файл: `docs/architecture.puml` (PlantUML)
 
-// BookStatistics.js — только статистика
-class BookStatistics {
-    getStatistics(books) { ... }
-}
+Отобразить онлайн: https://www.plantuml.com/plantuml/uml/
+
+### 4. Технологии и обоснование
+
+#### Users Service (Node.js + PostgreSQL)
+- **Node.js** — быстрая разработка REST API, large ecosystem
+- **PostgreSQL** — ACID, целостность данных пользователей
+- **JWT** — stateless авторизация
+
+#### Products Service (Python + MongoDB)
+- **Python** — аналитика, ML-рекомендации в будущем
+- **MongoDB** — гибкая схема для товаров с разными атрибутами
+- **Elasticsearch** — полнотекстовый поиск
+
+#### Orders Service (Go + PostgreSQL)
+- **Go** — высокая производительность, низкое потребление памяти
+- **PostgreSQL** — транзакции, консистентность заказов
+- **Saga-паттерн** — распределённые транзакции
+
+#### Payments Service (Java + PostgreSQL)
+- **Java** — стабильность, интеграция с банковскими API
+- **PostgreSQL** — надёжность хранения финансовых данных
+- **PCI DSS** — безопасность платёжных данных
+
+#### Notifications Service (Node.js + Redis)
+- **Node.js** — неблокирующий I/O для массовых рассылок
+- **Redis** — очереди, кеш, публикация событий
+- **RabbitMQ** — надёжная доставка сообщений
+
+### 5. Структура проекта
+
+```
+prod/
+├── README.md                          # Этот файл
+├── docs/
+│   └── architecture.puml              # Диаграмма (PlantUML)
+├── services/
+│   ├── users/                         # Node.js + PostgreSQL
+│   │   ├── Dockerfile
+│   │   ├── package.json
+│   │   └── src/
+│   ├── products/                      # Python + MongoDB
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── app/
+│   ├── orders/                        # Go + PostgreSQL
+│   │   ├── Dockerfile
+│   │   ├── go.mod
+│   │   └── cmd/
+│   ├── payments/                      # Java + PostgreSQL
+│   │   ├── Dockerfile
+│   │   ├── pom.xml
+│   │   └── src/
+│   └── notifications/                 # Node.js + Redis
+│       ├── Dockerfile
+│       ├── package.json
+│       └── src/
+├── gateway/                           # API Gateway (Nginx)
+│   └── nginx.conf
+├── docker-compose.yml                 # Запуск всей системы
+└── docs/
+    └── architecture.puml
 ```
 
----
+### 6. API Gateway
 
-### OCP — Принцип открытости/закрытости
+Nginx маршрутизирует запросы:
 
-**Bad:** Добавление нового хранилища = изменение класса
-```javascript
-// Добавили Redis? Меняем BookManager:
-class BookManager {
-    saveToRedis() { ... }   // ← модификация
-    loadFromRedis() { ... } // ← модификация
-}
+```
+/api/users/*     → users-service:3001
+/api/products/*  → products-service:5000
+/api/orders/*    → orders-service:8080
+/api/payments/*  → payments-service:8081
 ```
 
-**SOLID:** Добавление нового хранилища = новый класс
-```javascript
-class RedisBookRepository {
-    add(book) { ... }
-    findAll() { ... }
-}
-
-// BookService не трогаем!
-const service = new BookService(new RedisBookRepository());
-```
-
----
-
-### LSP — Принцип подстановки Лисков
-
-**Bad:** Нельзя подменить localStorage на файл без багов
-```javascript
-// localStorage-версия возвращает Promise
-// Файловая — синхронную строку
-// Клиентский код ломается при замене
-```
-
-**SOLID:** Любой репозиторий работает одинаково
-```javascript
-// InMemoryBookRepository
-const service1 = new BookService(new InMemoryBookRepository());
-
-// RedisBookRepository
-const service2 = new BookService(new RedisBookRepository());
-
-// Оба работают одинаково — интерфейс один
-```
-
----
-
-### ISP — Принцип разделения интерфейсов
-
-**Bad:** Класс с 20+ методами — клиент зависит от того, что не использует
-```javascript
-// Клиенту нужен только поиск, а он依赖 от:
-// saveToFile, loadFromFile, saveToLocalStorage,
-// exportToCSV, exportToHTML, sendNotification...
-```
-
-**SOLID:** Каждый интерфейс минимален
-```javascript
-// BookValidator — 2 метода
-class BookValidator {
-    validate(book) { ... }
-    isValid(book) { ... }
-}
-
-// BookFormatter — 3 метода
-class BookFormatter {
-    toCSV(books) { ... }
-    toHTML(books) { ... }
-    toJSON(books) { ... }
-}
-```
-
----
-
-### DIP — Принцип инверсии зависимостей
-
-**Bad:** Зависит от конкретных модулей (fs, localStorage, window)
-```javascript
-class BookManager {
-    saveToFile() {
-        const fs = require('fs');  // ← конкретный модуль
-        fs.writeFileSync('books.json', ...);
-    }
-}
-```
-
-**SOLID:** Зависит от абстракций (интерфейсов)
-```javascript
-class BookService {
-    constructor(repository) {
-        this.repository = repository;  // ← абстракция
-    }
-    // Не знает откуда берёт данные — файл, БД, API
-}
-```
-
----
-
-## Результаты тестов
-
-| Код | Тестов | Статус |
-|-----|--------|--------|
-| Bad (`tests/bad/`) | 14 | Все проходят |
-| SOLID (`tests/solid/`) | 16 | Все проходят |
-
-## Запуск тестов
+### 7. Запуск (docker-compose)
 
 ```bash
-npm test              # Все тесты
-npx jest tests/bad/   # Только bad
-npx jest tests/solid/ # Только SOLID
+docker-compose up --build
 ```
+
+Запустит:
+- 5 микросервисов
+- RabbitMQ
+- PostgreSQL (3 экземпляра)
+- MongoDB
+- Redis
+- Nginx Gateway
+
+### 8. Диаграмма потока данных
+
+```
+┌─────────┐     ┌─────────┐     ┌──────────────┐
+│ Клиент  │────▶│ Gateway │────▶│ Users        │
+└─────────┘     │         │     │ (авторизация)│
+                │         │     └──────────────┘
+                │         │
+                │         │     ┌──────────────┐
+                │         │────▶│ Products     │
+                │         │     │ (каталог)    │
+                │         │     └──────────────┘
+                │         │
+                │         │     ┌──────────────┐     ┌─────────┐
+                │         │────▶│ Orders       │────▶│ RabbitMQ│
+                │         │     │ (заказы)     │     └────┬────┘
+                └─────────┘     └──────────────┘          │
+                                    ▲                     │
+                                    │    ┌────────────────┼────────────────┐
+                                    │    │                │                │
+                              ┌─────┴────┴──┐    ┌───────┴──────┐  ┌──────┴──────┐
+                              │ Orders      │    │ Payments     │  │ Notifications│
+                              │ (статус)    │    │ (платежи)    │  │ (уведомления)│
+                              └─────────────┘    └──────────────┘  └─────────────┘
+```
+
+### 9. Паттерны
+
+| Паттерн | Где применяется |
+|---------|-----------------|
+| API Gateway | Маршрутизация, аутентификация |
+| Saga | Распределённые транзакции (Orders → Payments) |
+| Event Sourcing | История изменений заказов |
+| CQRS | Чтение/запись в Products Service |
+| Circuit Breaker | Отказоустойчивость между сервисами |

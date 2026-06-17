@@ -1,0 +1,56 @@
+@startuml
+
+!theme plain
+
+title Архитектура микросервисов — Онлайн-магазин
+
+package "Клиент" {
+    [Web-клиент] as Web
+    [Mobile-клиент] as Mobile
+}
+
+package "API Gateway" {
+    [Nginx / Kong] as Gateway
+}
+
+package "Микросервисы" {
+    [Users Service\nNode.js + PostgreSQL] as Users
+    [Products Service\nPython + MongoDB] as Products
+    [Orders Service\nGo + PostgreSQL] as Orders
+    [Payments Service\nJava + PostgreSQL] as Payments
+    [Notifications Service\nNode.js + Redis] as Notifications
+}
+
+package "Сообщения" {
+    database "RabbitMQ" as MQ
+}
+
+package "Хранилища" {
+    database "PostgreSQL\n(Users)" as PgUsers
+    database "PostgreSQL\n(Orders)" as PgOrders
+    database "PostgreSQL\n(Payments)" as PgPayments
+    database "MongoDB\n(Products)" as Mongo
+    database "Redis\n(Cache)" as Redis
+}
+
+Web --> Gateway
+Mobile --> Gateway
+
+Gateway --> Users : REST
+Gateway --> Products : REST
+Gateway --> Orders : REST
+Gateway --> Payments : REST
+
+Users --> PgUsers
+Products --> Mongo
+Orders --> PgOrders
+Payments --> PgPayments
+Notifications --> Redis
+
+Orders --> MQ : "Заказ создан"
+MQ --> Payments : "Обработать платёж"
+MQ --> Notifications : "Отправить уведомление"
+Payments --> MQ : "Платёж обработан"
+MQ --> Orders : "Обновить статус"
+
+@enduml
