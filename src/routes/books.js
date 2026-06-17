@@ -151,7 +151,7 @@ router.put('/:id', (req, res) => {
  *         schema:
  *           type: integer
  *     responses:
- *       204:
+ *       200:
  *         description: Книга удалена
  *       404:
  *         description: Книга не найдена
@@ -159,7 +159,7 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
     const removed = books.remove(parseInt(req.params.id));
     if (!removed) return res.status(404).json({ error: 'Книга не найдена' });
-    res.status(204).send();
+    res.json({ message: 'Книга удалена', id: parseInt(req.params.id) });
 });
 
 module.exports = router;
