@@ -2,12 +2,19 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+RUN npm install -g concurrently
 
-RUN npm ci --only=production
+COPY services/authors/package*.json ./services/authors/
+COPY services/categories/package*.json ./services/categories/
+COPY services/books/package*.json ./services/books/
 
-COPY src/ ./src/
+RUN cd services/authors && npm install --omit=dev
+RUN cd services/categories && npm install --omit=dev
+RUN cd services/books && npm install --omit=dev
 
-EXPOSE 3000
+COPY services/ ./services/
+COPY public/ ./public/
 
-CMD ["node", "src/server.js"]
+EXPOSE 3001 3002 3003
+
+CMD ["concurrently", "node services/authors/index.js", "node services/categories/index.js", "node services/books/index.js"]
